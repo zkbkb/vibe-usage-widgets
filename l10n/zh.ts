@@ -40,7 +40,7 @@ export const l10nZH: L10nMap = {
   errNoData: "暂无用量数据",
   errNoDataHint: "请在电脑上运行 vibe-usage sync",
 
-  settingsTitle: "Vibe-Usage Monitor",
+  settingsTitle: "Vibe Usage 小组件",
   sectionApiKey: "API Key",
   apiKeyPlaceholder: "vbu_...",
   apiKeyGet: "前往 vibecafe.ai/usage/setup 获取密钥",

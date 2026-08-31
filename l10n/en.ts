@@ -38,7 +38,7 @@ export const l10nEN = {
   errNoData: "No usage data yet",
   errNoDataHint: "Run vibe-usage sync on your machine",
 
-  settingsTitle: "Vibe-Usage Monitor",
+  settingsTitle: "Vibe Usage Widgets",
   sectionApiKey: "API Key",
   apiKeyPlaceholder: "vbu_...",
   apiKeyGet: "Get a key at vibecafe.ai/usage/setup",

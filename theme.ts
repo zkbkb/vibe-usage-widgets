@@ -1,21 +1,22 @@
+import { Color } from "scripting"
 import { ThemeMode } from "./settings"
 
-export type Style = string | { light: string; dark: string }
+export type Style = Color | { light: Color; dark: Color }
 
 interface Palette {
-  bg: string
-  card: string
-  border: string
-  text: string
-  secondary: string
-  tertiary: string
-  green: string
-  blue: string
-  amber: string
-  barOutput: string
-  barInput: string
-  barCached: string
-  track: string
+  bg: Color
+  card: Color
+  border: Color
+  text: Color
+  secondary: Color
+  tertiary: Color
+  green: Color
+  blue: Color
+  amber: Color
+  barOutput: Color
+  barInput: Color
+  barCached: Color
+  track: Color
 }
 
 // Official Vibe Usage macOS app tokens.
@@ -52,7 +53,7 @@ const light: Palette = {
   track: "rgba(17,17,17,0.08)",
 }
 
-export const CHART_PALETTE = [
+export const CHART_PALETTE: Color[] = [
   "#3B82F5",
   "#10BA82",
   "#F59E0A",
@@ -106,7 +107,8 @@ export function makeTheme(mode: ThemeMode, accent: string | null): Theme {
     green: pick("green"),
     blue: pick("blue"),
     amber: pick("amber"),
-    accent: accent ?? pick("green"),
+    // Validated by isHexColour() before it reaches here.
+    accent: (accent as Color | null) ?? pick("green"),
     barOutput: pick("barOutput"),
     barInput: pick("barInput"),
     barCached: pick("barCached"),
