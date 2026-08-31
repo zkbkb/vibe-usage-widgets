@@ -1,0 +1,41 @@
+{
+  "icon" : "rectangle.and.text.magnifyingglass",
+  "version" : "1.0.0",
+  "remoteResource" : null,
+  "contributors" : [
+
+  ],
+  "localizedNames" : {
+    "ja" : "",
+    "it" : "",
+    "en" : "",
+    "es" : "",
+    "ru" : "",
+    "pt" : "",
+    "fr" : "",
+    "de" : "",
+    "zh" : ""
+  },
+  "localizedDescriptions" : {
+    "ja" : "",
+    "it" : "",
+    "en" : "",
+    "es" : "",
+    "ru" : "",
+    "pt" : "",
+    "fr" : "",
+    "de" : "",
+    "zh" : ""
+  },
+  "entry" : "index.tsx",
+  "description" : null,
+  "permissions" : null,
+  "color" : "rgba(71, 102, 194,1)",
+  "name" : "Vibe-Usage Monitor 0.1.0",
+  "iconImage" : null,
+  "runInApp" : false,
+  "intentInputTypes" : [
+
+  ],
+  "author" : null
+}
