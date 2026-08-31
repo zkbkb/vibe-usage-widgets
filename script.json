@@ -1,6 +1,6 @@
 {
-  "icon" : "rectangle.and.text.magnifyingglass",
-  "version" : "1.0.0",
+  "icon" : "chart.bar.xaxis",
+  "version" : "0.1.0",
   "remoteResource" : null,
   "contributors" : [
 
@@ -8,29 +8,29 @@
   "localizedNames" : {
     "ja" : "",
     "it" : "",
-    "en" : "",
+    "en" : "Vibe-Usage Monitor",
     "es" : "",
     "ru" : "",
     "pt" : "",
     "fr" : "",
     "de" : "",
-    "zh" : ""
+    "zh" : "Vibe 用量监视器"
   },
   "localizedDescriptions" : {
     "ja" : "",
     "it" : "",
-    "en" : "",
+    "en" : "Home-screen widgets for Vibe-Usage: track AI coding token usage, estimated cost, active time and cache ratio, with small, medium and large layouts, offline cache, dark and light themes, English and Chinese, and per-widget parameter presets such as {\"view\":\"models\",\"days\":30}.",
     "es" : "",
     "ru" : "",
     "pt" : "",
     "fr" : "",
     "de" : "",
-    "zh" : ""
+    "zh" : "Vibe-Usage 桌面小组件：追踪 AI 编程 Token 用量、预估费用、活跃时长与缓存占比。支持小、中、大三种尺寸、离线缓存、深浅色主题、中英双语，并可通过 Parameter 预设（如 {\"view\":\"models\",\"days\":30}）为每个小组件独立配置。"
   },
   "entry" : "index.tsx",
-  "description" : null,
+  "description" : "Dashboard widgets for Vibe-Usage (vibecafe.ai): token usage, estimated cost, active time, trends and rankings.",
   "permissions" : null,
-  "color" : "rgba(71, 102, 194,1)",
+  "color" : "rgba(51, 204, 128, 1)",
   "name" : "Vibe-Usage Monitor 0.1.0",
   "iconImage" : null,
   "runInApp" : false,
