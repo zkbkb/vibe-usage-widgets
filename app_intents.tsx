@@ -1,7 +1,7 @@
 import { AppIntentManager, AppIntentProtocol, Widget } from "scripting"
-import { fetchUsage } from "./api"
-import { DEFAULT_SETTINGS } from "./settings"
-import { getApiKey, getStoredSettings, setCache } from "./store"
+import { fetchUsage } from "./lib/api"
+import { DEFAULT_SETTINGS } from "./lib/settings"
+import { getApiKey, getStoredSettings, setCache } from "./lib/store"
 
 async function refresh(daysParam?: number, includeMonthParam?: boolean) {
   const settings = { ...DEFAULT_SETTINGS, ...getStoredSettings() }

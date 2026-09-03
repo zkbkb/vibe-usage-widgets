@@ -18,7 +18,7 @@ import {
   VStack,
   Widget,
 } from "scripting"
-import { fetchUsage } from "../api"
+import { fetchUsage } from "../lib/api"
 import { getL10n } from "../l10n"
 import {
   buildPresetJson,
@@ -31,7 +31,7 @@ import {
   SortKey,
   ThemeMode,
   ViewKind,
-} from "../settings"
+} from "../lib/settings"
 import {
   clearCaches,
   getApiKey,
@@ -39,7 +39,7 @@ import {
   removeApiKey,
   saveSettings,
   setApiKey,
-} from "../store"
+} from "../lib/store"
 
 type TestState = "idle" | "testing" | "ok" | "unauthorized" | "network"
 

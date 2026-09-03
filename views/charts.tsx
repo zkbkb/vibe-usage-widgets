@@ -14,10 +14,10 @@ import {
   VStack,
   ZStack,
 } from "scripting"
-import { formatTokens } from "../format"
-import { fadedStyle, radialGlow, Style, Theme, verticalGradient } from "../theme"
-import { PeakTag } from "../settings"
-import { DayRow } from "../types"
+import { formatTokens } from "../lib/format"
+import { fadedStyle, radialGlow, Style, Theme, verticalGradient } from "../lib/theme"
+import { PeakTag } from "../lib/settings"
+import { DayRow } from "../lib/types"
 
 // When one day dwarfs the rest (max/mean > 6), switch to a sqrt scale so the
 // smaller days stay visible while the peak still clearly stands out.

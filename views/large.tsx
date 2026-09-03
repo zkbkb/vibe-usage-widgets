@@ -6,9 +6,9 @@ import {
   formatPercent,
   formatTokens,
   shortModelName,
-} from "../format"
-import { rankColour, Style, Theme } from "../theme"
-import { DayRow, RankItem } from "../types"
+} from "../lib/format"
+import { rankColour, Style, Theme } from "../lib/theme"
+import { DayRow, RankItem } from "../lib/types"
 import { DonutRing, MultiLines, StackedAreaChart, TrendBars } from "./charts"
 import {
   chartRowsOf,

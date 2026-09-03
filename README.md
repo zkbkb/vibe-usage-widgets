@@ -28,7 +28,7 @@ No server of its own, no analytics, no third parties: the only network call is t
 - **Offline-first**: responses are cached; on network failure the widget falls back to the cache and shows an offline badge with the data timestamp
 - **Refresh**: automatic reload roughly every 30 minutes (10 on failure), plus a manual refresh button on medium and large widgets
 - **Appearance**: a dark palette matching the official Vibe Usage design tokens and a tuned light palette. In follow-system mode the widget sets no background of its own, so it stays compatible with the system's translucent and tinted widget rendering.
-- **Languages**: English and Chinese, following the system by default
+- **Languages**: the picker offers English, Chinese and Follow System; under Follow System the widget also speaks Japanese, German, French, Spanish and Russian when the device does
 - **Per-widget configuration**: any widget instance can override the global settings through its Parameter field
 
 ### Requirements
@@ -118,6 +118,8 @@ Every widget instance can carry its own configuration. In **Edit Widget**, set t
 | `peakTag` | `"badge"` `"ruler"` `"single"` `"none"` | Peak value label on the trend chart |
 | `theme` | `"system"` `"dark"` `"light"` | Appearance |
 | `currency` | `"USD"` `"CNY"` | Display currency |
+| `language` | `"system"` `"en"` `"zh"` | Interface language |
+| `forecast` | `true` / `false` | Show the monthly cost forecast |
 | `mock` | `true` | Render deterministic demo data (no network) |
 
 The presets offered on the settings page:
@@ -156,18 +158,19 @@ widget.tsx ──> Storage cache (fresh within 15 min? use it)
 
 | Path | Responsibility |
 | --- | --- |
-| `widget.tsx` | Widget entry: config, cache/fetch pipeline, size routing, reload policy, accessory view |
 | `index.tsx` | In-app entry: presents the settings page |
+| `widget.tsx` | Widget entry: config, cache/fetch pipeline, size routing, reload policy, accessory view |
 | `app_intents.tsx` | `RefreshUsageIntent` behind the widget refresh button |
 | `_preview.tsx` | Development harness rendering any size, view and theme from mock data; `spike:"1"` injects an extreme day to test outlier softening |
-| `api.ts` | URL building, fetch with timeout, defensive payload decoding |
-| `store.ts` | Storage cache and Keychain access |
-| `settings.ts` | Settings model, widget-parameter parsing, precedence resolution |
-| `aggregate.ts` | Pure aggregation: totals, per-day rows, cost decomposition, rankings, forecast |
-| `format.ts` | Token, cost, duration and percentage formatting |
-| `theme.ts` | Dark and light token palettes, gradient and translucency helpers |
-| `mock.ts` | Deterministic demo data for `{"mock":true}` |
-| `l10n/` | English and Chinese string tables |
+| `lib/types.ts` | Shared shapes for the API payload and the aggregates |
+| `lib/settings.ts` | Settings model, parameter parsing and precedence, preset generation |
+| `lib/store.ts` | Storage cache and Keychain access |
+| `lib/api.ts` | URL building, fetch with timeout, defensive payload decoding |
+| `lib/aggregate.ts` | Pure aggregation: totals, per-day rows, cost decomposition, rankings, forecast |
+| `lib/format.ts` | Token, cost, duration and percentage formatting |
+| `lib/theme.ts` | Dark and light token palettes, gradient and translucency helpers |
+| `lib/mock.ts` | Deterministic demo data for `{"mock":true}` |
+| `l10n/` | String tables: English, Chinese, Japanese, German, French, Spanish, Russian |
 | `views/charts.tsx` | Hand-drawn chart primitives: trend line, trend bars, multi-lines, stacked area, donut ring, pill bar |
 | `views/shared.tsx` | Shared widget atoms: card, stat cell, header, rank row, composition legend, message view |
 | `views/small,medium,large.tsx` | Per-size layouts |
@@ -216,7 +219,7 @@ This is an unofficial companion project and is not affiliated with Vibe Cafe.
 - **离线优先**：响应自动缓存；网络失败时回退到缓存数据，并显示离线徽标与数据时间
 - **刷新机制**：约每 30 分钟自动刷新（失败后 10 分钟重试），中号与大号支持点击手动刷新
 - **外观**：深色配色复刻官方设计 token，浅色为适配调校版。跟随系统时小组件不设置自身背景，因此能与系统的半透明、着色渲染保持兼容。
-- **语言**：中文、英文、跟随系统
+- **语言**：选择器提供中文、英文与跟随系统；选「跟随系统」时，设备语言为日、德、法、西、俄的用户同样会得到母语界面
 - **按小组件配置**：任一小组件都可通过 Parameter 字段覆盖全局设置
 
 ### 使用前提
@@ -295,6 +298,8 @@ iCloud 云盘 / Scripting / scripts / Vibe Usage Widgets
 | `peakTag` | `"badge"` `"ruler"` `"single"` `"none"` | 趋势图上的峰值标注形式 |
 | `theme` | `"system"` `"dark"` `"light"` | 外观 |
 | `currency` | `"USD"` `"CNY"` | 显示货币 |
+| `language` | `"system"` `"en"` `"zh"` | 界面语言 |
+| `forecast` | `true` / `false` | 是否显示月度预测 |
 | `mock` | `true` | 使用确定性演示数据（不联网） |
 
 设置页内置的预设：
@@ -324,18 +329,19 @@ iCloud 云盘 / Scripting / scripts / Vibe Usage Widgets
 
 | 路径 | 职责 |
 | --- | --- |
-| `widget.tsx` | 小组件入口：配置解析、缓存/请求流水线、尺寸路由、刷新策略、accessory 视图 |
 | `index.tsx` | 应用内入口：呈现设置页 |
-| `app_intents.tsx` | 刷新按钮背后的 `RefreshUsageIntent` |
+| `widget.tsx` | 小组件入口：配置解析、缓存/请求流水线、尺寸路由、刷新策略、accessory 视图 |
+| `app_intents.tsx` | 刷新按钮背后的 `RefreshUsageIntent`（文件名为 Scripting 硬性约定） |
 | `_preview.tsx` | 开发预览载体，可用模拟数据渲染任意尺寸、视图与主题；`spike:"1"` 可注入极端值以验证离群值柔化 |
-| `api.ts` | URL 构造、带超时的请求、防御性响应解码 |
-| `store.ts` | Storage 缓存与钥匙串读写 |
-| `settings.ts` | 设置模型、Parameter 解析、优先级合并 |
-| `aggregate.ts` | 纯聚合：总量、按日行、费用拆分、排行、预测 |
-| `format.ts` | Token / 费用 / 时长 / 百分比格式化 |
-| `theme.ts` | 深浅色配色 token、渐变与半透明辅助函数 |
-| `mock.ts` | `{"mock":true}` 使用的确定性演示数据 |
-| `l10n/` | 中英文案表 |
+| `lib/types.ts` | API 响应与聚合结果的共享数据结构 |
+| `lib/settings.ts` | 设置模型、Parameter 解析与优先级合并、预设码生成 |
+| `lib/store.ts` | Storage 缓存与钥匙串读写 |
+| `lib/api.ts` | URL 构造、带超时的请求、防御性响应解码 |
+| `lib/aggregate.ts` | 纯聚合：总量、按日行、费用拆分、排行、预测 |
+| `lib/format.ts` | Token / 费用 / 时长 / 百分比格式化 |
+| `lib/theme.ts` | 深浅色配色 token、渐变与半透明辅助函数 |
+| `lib/mock.ts` | `{"mock":true}` 使用的确定性演示数据 |
+| `l10n/` | 文案表：中、英、日、德、法、西、俄 |
 | `views/charts.tsx` | 手绘图表原语：趋势线、趋势条、多折线、堆叠面积、环形图、胶囊条 |
 | `views/shared.tsx` | 共享 UI 原子：卡片、指标格、表头、排行行、构成图例、消息视图 |
 | `views/small,medium,large.tsx` | 各尺寸布局 |

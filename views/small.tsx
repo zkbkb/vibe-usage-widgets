@@ -6,8 +6,8 @@ import {
   formatPercent,
   formatTokens,
   shortModelName,
-} from "../format"
-import { rankColour } from "../theme"
+} from "../lib/format"
+import { rankColour } from "../lib/theme"
 import { PillBar, TrendBars, TrendLine } from "./charts"
 import { viewShortTitle, WidgetData, WidgetHeader } from "./shared"
 

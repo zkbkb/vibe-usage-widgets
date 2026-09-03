@@ -9,11 +9,11 @@ import {
   VirtualNode,
   VStack,
 } from "scripting"
-import { formatPercent } from "../format"
-import { Style, Theme, verticalGradient } from "../theme"
+import { formatPercent } from "../lib/format"
+import { Style, Theme, verticalGradient } from "../lib/theme"
 import { L10nMap } from "../l10n"
-import { Aggregates, DataStatus, DayRow, RankItem } from "../types"
-import { ResolvedConfig, ViewKind } from "../settings"
+import { Aggregates, DataStatus, DayRow, RankItem } from "../lib/types"
+import { ResolvedConfig, ViewKind } from "../lib/settings"
 import { RefreshUsageIntent } from "../app_intents"
 import { PillBar } from "./charts"
 
