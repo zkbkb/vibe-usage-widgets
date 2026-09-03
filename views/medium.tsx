@@ -1,171 +1,188 @@
-import { HStack, RoundedRectangle, Spacer, Text, VirtualNode, VStack } from "scripting"
-import { formatCost, formatDuration, formatCount, formatPercent, formatTokens, shortModelName } from "../format"
+import { HStack, Spacer, VirtualNode, VStack } from "scripting"
+import {
+  formatCost,
+  formatCount,
+  formatDuration,
+  formatPercent,
+  formatTokens,
+  shortModelName,
+} from "../format"
 import { rankColour } from "../theme"
 import { RankItem } from "../types"
-import { DonutRing, StackedBars } from "./charts"
-import { refreshParamFor, StatCell, WidgetData, WidgetHeader } from "./shared"
+import { DonutRing, MultiLines, StackedAreaChart, TrendBars } from "./charts"
+import {
+  chartRowsOf,
+  compositionOf,
+  CompositionLegend,
+  RankRow,
+  refreshParamFor,
+  viewTitle,
+  StatCell,
+  WidgetData,
+  WidgetHeader,
+} from "./shared"
 
 function rankValue(item: RankItem, data: WidgetData): string {
-  const { config, lang } = data
+  const { config } = data
   return config.sortKey === "cost"
-    ? formatCost(item.cost, config.currency, config.privacyMode)
-    : formatTokens(item.tokens, lang, config.privacyMode)
+    ? formatCost(item.cost, config.currency)
+    : formatTokens(item.tokens)
 }
 
-function CompactRankRow({
-  data,
-  item,
-  index,
-  isOther,
-  shortenName,
-}: {
-  data: WidgetData
-  item: RankItem
-  index: number
-  isOther: boolean
-  shortenName: boolean
-}) {
-  const { theme } = data
-  return <HStack spacing={5}>
-    <RoundedRectangle
-      cornerRadius={2}
-      fill={rankColour(index, isOther)}
-      frame={{ width: 6, height: 6 }}
-    />
-    <Text
-      font={10}
-      foregroundStyle={theme.text}
-      lineLimit={1}
-      minScaleFactor={0.8}
-    >{shortenName ? shortModelName(item.name) : item.name}</Text>
-    <Spacer />
-    <Text
-      font={10}
-      monospacedDigit
-      foregroundStyle={theme.secondary}
-    >{rankValue(item, data)}</Text>
-    <Text
-      font={9}
-      monospacedDigit
-      foregroundStyle={theme.tertiary}
-      frame={{ width: 30, alignment: "trailing" }}
-    >{formatPercent(item.share)}</Text>
-  </HStack>
-}
-
-function DistributionContent({
-  data,
-  items,
-  centreLabel,
-  shortenName,
-}: {
-  data: WidgetData
-  items: RankItem[]
-  centreLabel: string
-  shortenName: boolean
-}) {
-  const { theme, l10n, lang, config } = data
-  const shown = items.slice(0, 4)
-  return <HStack spacing={12} frame={{ maxWidth: "infinity", maxHeight: "infinity" }}>
+function ModelsContent({ data }: { data: WidgetData }) {
+  const { theme, l10n, agg, config } = data
+  const shown = agg.byModel.slice(0, 3)
+  const segments = shown.map((item, index) => ({
+    share: item.share,
+    colour: rankColour(index, item.name === l10n.other),
+  }))
+  return <HStack
+    spacing={16}
+    frame={{ maxWidth: "infinity", maxHeight: "infinity" }}
+    padding={{ leading: 8, trailing: 6, top: 2, bottom: 2 }}
+    alignment={"center"}
+  >
     <DonutRing
       theme={theme}
-      segments={shown.map((item, index) => ({
-        share: item.share,
-        colour: rankColour(index, item.name === l10n.other),
-      }))}
-      size={64}
+      segments={segments}
+      size={68}
       lineWidth={9}
-      centreLabel={centreLabel}
-      centreValue={
-        config.sortKey === "cost"
-          ? formatCost(data.agg.totals.cost, config.currency, config.privacyMode)
-          : formatTokens(data.agg.totals.displayed, lang, config.privacyMode)
-      }
+      centreLabel={config.sortKey === "cost" ? l10n.cost : l10n.totalTokens}
+      centreValue={config.sortKey === "cost"
+        ? formatCost(agg.totals.cost, config.currency)
+        : formatTokens(agg.totals.displayed)}
+      centreSubValue={config.sortKey === "cost"
+        ? formatTokens(agg.totals.displayed)
+        : formatCost(agg.totals.cost, config.currency)}
     />
-    <VStack spacing={4} frame={{ maxWidth: "infinity" }}>
-      {shown.map((item, index) =>
-        <CompactRankRow
-          data={data}
-          item={item}
-          index={index}
-          isOther={item.name === l10n.other}
-          shortenName={shortenName}
-        />
-      )}
+    <VStack spacing={6} frame={{ maxWidth: "infinity" }}>
+      {shown.map((item, index) => <RankRow
+        theme={theme}
+        item={{ ...item, name: shortModelName(item.name) }}
+        colour={rankColour(index, item.name === l10n.other)}
+        valueText={rankValue(item, data)}
+        shareText={formatPercent(item.share)}
+        barHeight={3}
+      />)}
     </VStack>
   </HStack>
 }
 
 export function MediumWidget({ data }: { data: WidgetData }) {
   const { agg, config, theme, l10n, lang } = data
-  const privacy = config.privacyMode
-
   let content: VirtualNode
   if (config.view === "active") {
-    content = <VStack spacing={6} frame={{ maxWidth: "infinity", maxHeight: "infinity" }}>
+    content = <VStack spacing={8} frame={{ maxWidth: "infinity", maxHeight: "infinity" }}>
       <HStack spacing={8}>
-        <StatCell theme={theme} label={l10n.sessions} value={formatCount(agg.sessionStats.count, privacy)} valueSize={16} />
-        <StatCell theme={theme} label={l10n.messages} value={formatCount(agg.sessionStats.messages, privacy)} valueSize={16} />
-        <StatCell theme={theme} label={l10n.userMessages} value={formatCount(agg.sessionStats.userMessages, privacy)} valueSize={16} />
-        <StatCell theme={theme} label={l10n.activeTime} value={formatDuration(agg.sessionStats.activeSec, lang)} valueColour={theme.blue} valueSize={16} />
+        <StatCell
+          theme={theme}
+          label={l10n.sessions}
+          value={formatCount(agg.sessionStats.count)}
+          valueSize={17}
+        />
+        <StatCell
+          theme={theme}
+          label={l10n.messages}
+          value={formatCount(agg.sessionStats.messages)}
+          valueSize={17}
+        />
+        <StatCell
+          theme={theme}
+          label={l10n.userMessages}
+          value={formatCount(agg.sessionStats.userMessages)}
+          valueSize={17}
+        />
+        <StatCell
+          theme={theme}
+          label={l10n.activeTime}
+          value={formatDuration(agg.sessionStats.activeSec, lang)}
+          valueColour={theme.blue}
+          valueSize={17}
+        />
       </HStack>
-      <StackedBars
+      <TrendBars
         theme={theme}
-        rows={agg.byDay.slice(-14)}
-        height={30}
-        mode={"active"}
+        values={agg.byDay.slice(-14).map(row => row.activeSec)}
+        colour={theme.blue}
       />
     </VStack>
   } else if (config.view === "models") {
-    content = <DistributionContent
-      data={data}
-      items={agg.byModel}
-      centreLabel={l10n.viewModels}
-      shortenName
-    />
-  } else if (config.view === "projects") {
-    content = <DistributionContent
-      data={data}
-      items={agg.byProject}
-      centreLabel={l10n.viewProjects}
-      shortenName={false}
-    />
+    content = <ModelsContent data={data} />
   } else {
+    const isCost = config.sortKey === "cost"
+    const chartRows = chartRowsOf(data, 14)
+    const compItems = compositionOf(data)
+    const valueFormatter = (v: number) =>
+      isCost ? formatCost(v, config.currency) : formatTokens(v)
+    let chartNode: VirtualNode
+    if (config.chartStyle === "multilines") {
+      chartNode = <MultiLines
+        theme={theme}
+        rows={chartRows}
+        peakTag={config.peakTag}
+        valueFormatter={valueFormatter}
+      />
+    } else {
+      // Default: Log-stacked area with distinct purple reasoning line & peak callout
+      chartNode = <StackedAreaChart
+        theme={theme}
+        rows={chartRows}
+        peakTag={config.peakTag}
+        valueFormatter={valueFormatter}
+      />
+    }
     content = <VStack spacing={6} frame={{ maxWidth: "infinity", maxHeight: "infinity" }}>
       <HStack spacing={8}>
-        <StatCell theme={theme} label={l10n.totalTokens} value={formatTokens(agg.totals.displayed, lang, privacy)} valueSize={16} />
+        <StatCell
+          theme={theme}
+          label={l10n.totalTokens}
+          value={formatTokens(agg.totals.displayed)}
+          valueSize={17}
+        />
         <StatCell
           theme={theme}
           label={l10n.cost}
-          value={formatCost(agg.totals.cost, config.currency, privacy)}
+          value={formatCost(agg.totals.cost, config.currency)}
           valueColour={theme.green}
-          valueSize={16}
+          valueSize={17}
         />
-        <StatCell theme={theme} label={l10n.activeTime} value={formatDuration(agg.sessionStats.activeSec, lang)} valueColour={theme.blue} valueSize={16} />
-        <StatCell theme={theme} label={l10n.cacheRatio} value={formatPercent(agg.totals.cacheRatio)} valueSize={16} />
+        <StatCell
+          theme={theme}
+          label={l10n.activeTime}
+          value={formatDuration(agg.sessionStats.activeSec, lang)}
+          valueColour={theme.blue}
+          valueSize={17}
+        />
+        <StatCell
+          theme={theme}
+          label={l10n.cacheRatio}
+          value={formatPercent(agg.totals.cacheRatio)}
+          valueSize={17}
+        />
       </HStack>
-      <StackedBars
-        theme={theme}
-        rows={agg.byDay.slice(-14)}
-        height={30}
-        mode={"tokens"}
-      />
+      {chartNode}
+      <HStack frame={{ maxWidth: "infinity" }}>
+        <Spacer />
+        <CompositionLegend theme={theme} items={compItems} />
+        <Spacer />
+      </HStack>
     </VStack>
   }
 
   return <VStack
     alignment={"leading"}
-    spacing={6}
+    spacing={8}
     padding={12}
     frame={{ maxWidth: "infinity", maxHeight: "infinity" }}
-    widgetBackground={theme.bg}
+    widgetBackground={theme.forcedBg ?? undefined}
   >
     <WidgetHeader
       theme={theme}
-      l10n={l10n}
+      title={viewTitle(config.view, l10n)}
       status={data.status}
       showRefresh
       refreshParam={refreshParamFor(config)}
+      windowText={l10n.daysWindow(config.days)}
     />
     {content}
   </VStack>

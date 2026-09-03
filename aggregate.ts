@@ -75,13 +75,17 @@ export function computeAggregates(
       date: dayKey(date),
       dayOfMonth: date.getDate(),
       input: 0, output: 0, reasoning: 0, cached: 0,
-      total: 0, cost: 0, activeSec: 0,
+      total: 0, cost: 0,
+      costInput: 0, costOutput: 0, costReasoning: 0, costCached: 0,
+      activeSec: 0,
     })
   }
 
   const totals = {
     input: 0, output: 0, reasoning: 0, cached: 0,
-    displayed: 0, cost: 0, cacheRatio: 0,
+    displayed: 0, cost: 0,
+    costInput: 0, costOutput: 0, costReasoning: 0, costCached: 0,
+    cacheRatio: 0,
   }
   const byModel = new Map<string, { tokens: number; cost: number }>()
   const byProject = new Map<string, { tokens: number; cost: number }>()
@@ -102,11 +106,27 @@ export function computeAggregates(
     if (time < winStartMs) {
       continue
     }
+    // Pricing weighting based on standard LLM token pricing:
+    // cached input ≈ 0.15x regular input; output & reasoning ≈ 4x regular input.
+    const wCached = bucket.cachedInputTokens * 0.15
+    const wInput = bucket.inputTokens * 1.0
+    const wOutput = bucket.outputTokens * 4.0
+    const wReasoning = bucket.reasoningOutputTokens * 4.0
+    const wTotal = wCached + wInput + wOutput + wReasoning
+    const bCostCached = wTotal > 0 ? (wCached / wTotal) * cost : 0
+    const bCostInput = wTotal > 0 ? (wInput / wTotal) * cost : 0
+    const bCostOutput = wTotal > 0 ? (wOutput / wTotal) * cost : 0
+    const bCostReasoning = wTotal > 0 ? (wReasoning / wTotal) * cost : 0
+
     totals.input += bucket.inputTokens
     totals.output += bucket.outputTokens
     totals.reasoning += bucket.reasoningOutputTokens
     totals.cached += bucket.cachedInputTokens
     totals.cost += cost
+    totals.costInput += bCostInput
+    totals.costOutput += bCostOutput
+    totals.costReasoning += bCostReasoning
+    totals.costCached += bCostCached
 
     const row = byDayMap.get(dayKey(new Date(time)))
     if (row != null) {
@@ -116,6 +136,10 @@ export function computeAggregates(
       row.cached += bucket.cachedInputTokens
       row.total += bucketTokens(bucket)
       row.cost += cost
+      row.costInput += bCostInput
+      row.costOutput += bCostOutput
+      row.costReasoning += bCostReasoning
+      row.costCached += bCostCached
     }
 
     const tokens = bucketTokens(bucket)
@@ -123,7 +147,7 @@ export function computeAggregates(
       [byModel, bucket.model],
       [byProject, bucket.project],
       [bySource, bucket.source],
-    ] as const) {
+    ] as [Map<string, { tokens: number; cost: number }>, string][]) {
       const entry = map.get(key) ?? { tokens: 0, cost: 0 }
       entry.tokens += tokens
       entry.cost += cost

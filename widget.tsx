@@ -4,7 +4,7 @@ import { computeAggregates } from "./aggregate"
 import { formatCost, formatTokens } from "./format"
 import { getL10n, L10nMap } from "./l10n"
 import { mockPayload } from "./mock"
-import { resolveConfig, ResolvedConfig } from "./settings"
+import { ResolvedConfig, resolveConfig } from "./settings"
 import { getAnyCache, getApiKey, getStoredSettings, setCache } from "./store"
 import { makeTheme, Theme } from "./theme"
 import { DataStatus, FetchError, UsagePayload } from "./types"
@@ -25,7 +25,13 @@ function resolveLanguage(config: ResolvedConfig): string {
   return Array.isArray(preferred) && preferred.length > 0 ? preferred[0] : "en"
 }
 
-function Chrome({ theme, children }: { theme: Theme; children: VirtualNode }) {
+function Chrome({
+  theme,
+  children
+}: {
+  theme: Theme
+  children: VirtualNode
+}) {
   return <VStack
     padding={12}
     frame={{ maxWidth: "infinity", maxHeight: "infinity" }}
@@ -35,29 +41,61 @@ function Chrome({ theme, children }: { theme: Theme; children: VirtualNode }) {
   </VStack>
 }
 
-function errorView(theme: Theme, l10n: L10nMap, error: FetchError | "noKey" | "noData"): VirtualNode {
+function errorView(
+  theme: Theme,
+  l10n: L10nMap,
+  error: FetchError | "noKey" | "noData",
+): VirtualNode {
   if (error === "noKey") {
-    return <MessageView theme={theme} icon={"key.fill"} iconColour={theme.amber} title={l10n.errNoKey} hint={l10n.errNoKeyHint} />
+    return <MessageView
+      theme={theme}
+      icon={"key.fill"}
+      iconColour={theme.amber}
+      title={l10n.errNoKey}
+      hint={l10n.errNoKeyHint}
+    />
   }
   if (error === "unauthorized") {
-    return <MessageView theme={theme} icon={"exclamationmark.lock.fill"} iconColour={theme.amber} title={l10n.errUnauthorized} hint={l10n.errUnauthorizedHint} />
+    return <MessageView
+      theme={theme}
+      icon={"exclamationmark.lock.fill"}
+      iconColour={theme.amber}
+      title={l10n.errUnauthorized}
+      hint={l10n.errUnauthorizedHint}
+    />
   }
   if (error === "noData") {
-    return <MessageView theme={theme} icon={"tray"} iconColour={theme.secondary} title={l10n.errNoData} hint={l10n.errNoDataHint} />
+    return <MessageView
+      theme={theme}
+      icon={"tray"}
+      iconColour={theme.secondary}
+      title={l10n.errNoData}
+      hint={l10n.errNoDataHint}
+    />
   }
-  return <MessageView theme={theme} icon={"wifi.slash"} iconColour={theme.secondary} title={l10n.errNetwork} hint={l10n.errNetworkHint} />
+  return <MessageView
+    theme={theme}
+    icon={"wifi.slash"}
+    iconColour={theme.secondary}
+    title={l10n.errNetwork}
+    hint={l10n.errNetworkHint}
+  />
 }
 
 function AccessoryView({ data }: { data: WidgetData }) {
   const { agg, config, lang } = data
   return <VStack spacing={1} alignment={"leading"}>
-    <Text font={15} fontWeight={"bold"} monospacedDigit widgetAccentable>
-      {formatTokens(agg.totals.displayed, lang, config.privacyMode)}
-    </Text>
+    <Text
+      font={15}
+      fontWeight={"bold"}
+      monospacedDigit
+      widgetAccentable
+    >{formatTokens(agg.totals.displayed)}</Text>
     <HStack spacing={4}>
-      <Text font={11} monospacedDigit>
-        {formatCost(agg.totals.cost, config.currency, config.privacyMode)}
-      </Text>
+      <Text
+        font={11}
+        monospacedDigit
+      >{formatCost(agg.totals.cost, config.currency)}</Text>
     </HStack>
   </VStack>
 }
@@ -87,7 +125,7 @@ async function main() {
   const config = resolveConfig(getStoredSettings(), Widget.parameter)
   const lang = resolveLanguage(config)
   const l10n = getL10n(lang)
-  const theme = makeTheme(config.theme, config.accent)
+  const theme = makeTheme(config.theme)
 
   let payload: UsagePayload | null = null
   let status: DataStatus = { kind: "fresh", fetchedAt: Date.now() }
@@ -100,7 +138,6 @@ async function main() {
   } else {
     const cache = getAnyCache(config.days)
     const apiKey = getApiKey()
-
     if (apiKey == null || apiKey.length === 0) {
       if (cache != null) {
         payload = cache.payload
@@ -108,7 +145,10 @@ async function main() {
         status = { kind: "stale", fetchedAt: cache.fetchedAt }
         retryMinutes = RELOAD_RETRY_MINUTES
       } else {
-        present(<Chrome theme={theme}>{errorView(theme, l10n, "noKey")}</Chrome>, RELOAD_OK_MINUTES)
+        present(
+          <Chrome theme={theme}>{errorView(theme, l10n, "noKey")}</Chrome>,
+          RELOAD_OK_MINUTES,
+        )
         return
       }
     } else if (cache != null && Date.now() - cache.fetchedAt < FRESH_WINDOW_MS) {
@@ -143,7 +183,10 @@ async function main() {
   }
 
   if (payload == null || (!payload.hasAnyData && payload.buckets.length === 0)) {
-    present(<Chrome theme={theme}>{errorView(theme, l10n, "noData")}</Chrome>, RELOAD_OK_MINUTES)
+    present(
+      <Chrome theme={theme}>{errorView(theme, l10n, "noData")}</Chrome>,
+      RELOAD_OK_MINUTES,
+    )
     return
   }
 
@@ -154,7 +197,6 @@ async function main() {
     coversMonth,
     otherLabel: l10n.other,
   })
-
   const data: WidgetData = { agg, config, theme, l10n, lang, status }
   present(pickView(data), retryMinutes)
 }

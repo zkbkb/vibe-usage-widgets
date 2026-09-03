@@ -12,6 +12,7 @@ import {
   SecureField,
   Spacer,
   Text,
+  TextField,
   Toggle,
   useState,
   VStack,
@@ -20,6 +21,9 @@ import {
 import { fetchUsage } from "../api"
 import { getL10n } from "../l10n"
 import {
+  buildPresetJson,
+  isPresetText,
+  ChartStyle,
   Currency,
   DEFAULT_SETTINGS,
   LanguageMode,
@@ -36,18 +40,8 @@ import {
   saveSettings,
   setApiKey,
 } from "../store"
-import { ACCENT_CHOICES } from "../theme"
 
 type TestState = "idle" | "testing" | "ok" | "unauthorized" | "network"
-
-export const PRESET_EXAMPLES: { name: string; json: string }[] = [
-  { name: "Models · 30d", json: `{"view":"models","days":30}` },
-  { name: "Projects · cost", json: `{"view":"projects","sort":"cost"}` },
-  { name: "Activity", json: `{"view":"active"}` },
-  { name: "Private overview", json: `{"view":"overview","privacy":true}` },
-  { name: "Custom accent", json: `{"accent":"#6199FF","days":30}` },
-  { name: "Mock demo data", json: `{"mock":true}` },
-]
 
 export function SettingsView() {
   const dismiss = Navigation.useDismiss()
@@ -57,15 +51,23 @@ export function SettingsView() {
   })
   const [apiKeyInput, setApiKeyInput] = useState<string>(getApiKey() ?? "")
   const [testState, setTestState] = useState<TestState>("idle")
+  const [copied, setCopied] = useState<boolean>(false)
+  const [presetDraft, setPresetDraft] = useState<string>(
+    buildPresetJson({ ...DEFAULT_SETTINGS, ...getStoredSettings() }),
+  )
 
   const systemLang = (Device.preferredLanguages?.[0] ?? "en")
   const lang = settings.language === "system" ? systemLang : settings.language
   const l10n = getL10n(lang)
+  const presetValid = isPresetText(presetDraft)
 
   function update(patch: Partial<Settings>) {
     const next = { ...settings, ...patch }
     setSettingsState(next)
     saveSettings(next)
+    // Settings win outright: the draft is replaced, edits and all.
+    setPresetDraft(buildPresetJson(next))
+    setCopied(false)
     if (patch.days != null && patch.days !== settings.days) {
       clearCaches()
     }
@@ -149,45 +151,52 @@ export function SettingsView() {
         <Picker
           title={l10n.statsDays}
           value={`${settings.days}`}
-          onChanged={(value: string) => update({ days: parseInt(value) || 7 })}
+          onChanged={(value) => update({ days: parseInt(value) || 7 })}
           pickerStyle={"menu"}
         >
-          {["1", "7", "30", "90"].map(d =>
-            <Text tag={d}>{`${d} ${d === "1" ? l10n.dayUnit : l10n.daysUnit}`}</Text>
-          )}
+          {["1", "7", "14", "30", "90"].map(d =>
+            <Text tag={d}>{`${d} ${d === "1" ? l10n.dayUnit : l10n.daysUnit}`}</Text>)}
         </Picker>
         <Picker
           title={l10n.sortBy}
           value={settings.sortKey}
-          onChanged={(value: SortKey) => update({ sortKey: value })}
+          onChanged={(value) => update({ sortKey: value as SortKey })}
           pickerStyle={"menu"}
         >
           <Text tag={"tokens"}>{l10n.sortTokens}</Text>
           <Text tag={"cost"}>{l10n.sortCost}</Text>
         </Picker>
-        <Toggle
-          title={l10n.showForecast}
-          value={settings.showForecast}
-          onChanged={(value: boolean) => update({ showForecast: value })}
-        />
+        <Picker
+          title={l10n.chartStyle}
+          value={settings.chartStyle}
+          onChanged={(value) => update({ chartStyle: value as ChartStyle })}
+          pickerStyle={"menu"}
+        >
+          <Text tag={"stacked"}>{l10n.chartStyleStacked}</Text>
+          <Text tag={"multilines"}>{l10n.chartStyleLines}</Text>
+        </Picker>
         <Picker
           title={l10n.defaultView}
           value={settings.defaultView}
-          onChanged={(value: ViewKind) => update({ defaultView: value })}
+          onChanged={(value) => update({ defaultView: value as ViewKind })}
           pickerStyle={"menu"}
         >
           <Text tag={"overview"}>{l10n.viewOverview}</Text>
           <Text tag={"active"}>{l10n.viewActive}</Text>
           <Text tag={"models"}>{l10n.viewModels}</Text>
-          <Text tag={"projects"}>{l10n.viewProjects}</Text>
         </Picker>
+        <Toggle
+          title={l10n.showForecast}
+          value={settings.showForecast}
+          onChanged={(value) => update({ showForecast: value })}
+        />
       </Section>
 
       <Section header={<Text>{l10n.sectionAppearance}</Text>}>
         <Picker
           title={l10n.theme}
           value={settings.theme}
-          onChanged={(value: ThemeMode) => update({ theme: value })}
+          onChanged={(value) => update({ theme: value as ThemeMode })}
           pickerStyle={"menu"}
         >
           <Text tag={"system"}>{l10n.themeSystem}</Text>
@@ -195,41 +204,23 @@ export function SettingsView() {
           <Text tag={"light"}>{l10n.themeLight}</Text>
         </Picker>
         <Picker
-          title={l10n.accentColour}
-          value={settings.accent ?? "default"}
-          onChanged={(value: string) =>
-            update({ accent: value === "default" ? null : value })}
-          pickerStyle={"menu"}
-        >
-          {ACCENT_CHOICES.map(choice =>
-            <Text tag={choice.value ?? "default"}>
-              {choice.value == null ? l10n.accentDefault : choice.name}
-            </Text>
-          )}
-        </Picker>
-        <Toggle
-          title={l10n.privacyMode}
-          value={settings.privacyMode}
-          onChanged={(value: boolean) => update({ privacyMode: value })}
-        />
-        <Picker
           title={l10n.currency}
           value={settings.currency}
-          onChanged={(value: Currency) => update({ currency: value })}
+          onChanged={(value) => update({ currency: value as Currency })}
           pickerStyle={"menu"}
         >
-          <Text tag={"USD"}>USD $</Text>
-          <Text tag={"CNY"}>CNY ¥</Text>
+          <Text tag={"USD"}>{"USD $"}</Text>
+          <Text tag={"CNY"}>{"CNY ¥"}</Text>
         </Picker>
         <Picker
           title={l10n.language}
           value={settings.language}
-          onChanged={(value: LanguageMode) => update({ language: value })}
+          onChanged={(value) => update({ language: value as LanguageMode })}
           pickerStyle={"menu"}
         >
           <Text tag={"system"}>{l10n.languageSystem}</Text>
-          <Text tag={"en"}>English</Text>
-          <Text tag={"zh"}>中文</Text>
+          <Text tag={"en"}>{"English"}</Text>
+          <Text tag={"zh"}>{"中文"}</Text>
         </Picker>
       </Section>
 
@@ -237,35 +228,57 @@ export function SettingsView() {
         header={<Text>{l10n.sectionPresets}</Text>}
         footer={<Text>{l10n.presetsHint}</Text>}
       >
-        {PRESET_EXAMPLES.map(preset =>
-          <Button
-            action={async () => {
-              await Pasteboard.setString(preset.json)
-            }}
-          >
-            <HStack>
-              <VStack alignment={"leading"} spacing={2}>
-                <Text font={14}>{preset.name}</Text>
-                <Text font={11} foregroundStyle={"secondaryLabel"} monospaced>{preset.json}</Text>
-              </VStack>
-              <Spacer />
-              <Image systemName={"doc.on.doc"} foregroundStyle={"secondaryLabel"} imageScale={"small"} />
-            </HStack>
-          </Button>
-        )}
+        <TextField
+          title={""}
+          value={presetDraft}
+          onChanged={(value) => {
+            setPresetDraft(value)
+            setCopied(false)
+          }}
+          prompt={"{}"}
+          axis={"vertical"}
+          font={12}
+          monospaced
+          autocorrectionDisabled
+          textInputAutocapitalization={"never"}
+        />
+        <Button
+          action={async () => {
+            await Pasteboard.setString(presetDraft)
+            setCopied(true)
+          }}
+        >
+          <HStack>
+            <Text font={14}>
+              {copied ? l10n.presetCopied : l10n.copyCurrentPreset}
+            </Text>
+            <Spacer />
+            <Image
+              systemName={presetValid
+                ? (copied ? "checkmark" : "doc.on.doc")
+                : "exclamationmark.triangle"}
+              foregroundStyle={presetValid
+                ? (copied ? "systemGreen" : "secondaryLabel")
+                : "systemOrange"}
+              imageScale={"small"}
+            />
+          </HStack>
+        </Button>
       </Section>
 
       <Section header={<Text>{l10n.sectionDev}</Text>}>
         <Button
           title={l10n.previewWidget}
           action={async () => {
-            const options: Record<string, string> = { "Default": "{}" }
-            for (const preset of PRESET_EXAMPLES) {
-              options[preset.name] = preset.json
+            const options: Record<string, string> = {
+              [l10n.presetCurrent]: presetDraft,
+              [l10n.viewOverview]: JSON.stringify({ view: "overview" }),
+              [l10n.viewModels]: JSON.stringify({ view: "models" }),
+              [l10n.viewActive]: JSON.stringify({ view: "active" }),
             }
             await Widget.preview({
               family: "systemMedium",
-              parameters: { options, default: "Default" },
+              parameters: { options, default: l10n.presetCurrent },
             })
           }}
         />

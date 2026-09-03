@@ -54,6 +54,10 @@ export interface DayRow {
   cached: number
   total: number
   cost: number
+  costInput: number
+  costOutput: number
+  costReasoning: number
+  costCached: number
   activeSec: number
 }
 
@@ -72,6 +76,10 @@ export interface Aggregates {
     cached: number
     displayed: number
     cost: number
+    costInput: number
+    costOutput: number
+    costReasoning: number
+    costCached: number
     cacheRatio: number
   }
   byDay: DayRow[]

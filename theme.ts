@@ -1,4 +1,4 @@
-import { Color } from "scripting"
+import { Color, DynamicShapeStyle, ShapeStyle } from "scripting"
 import { ThemeMode } from "./settings"
 
 export type Style = Color | { light: Color; dark: Color }
@@ -12,45 +12,42 @@ interface Palette {
   tertiary: Color
   green: Color
   blue: Color
+  violet: Color
+  sky: Color
   amber: Color
-  barOutput: Color
-  barInput: Color
-  barCached: Color
   track: Color
 }
 
-// Official Vibe Usage macOS app tokens.
+// Dashboard-grade dark tokens (matches the official Vibe Usage macOS app).
 const dark: Palette = {
-  bg: "#0A0A0A",
-  card: "#171717",
-  border: "#292929",
+  bg: "#0A0A0C",
+  card: "#16171B",
+  border: "rgba(255,255,255,0.07)",
   text: "#FFFFFF",
-  secondary: "#A1A1A1",
-  tertiary: "#616161",
+  secondary: "#9C9FA8",
+  tertiary: "#5F626B",
   green: "#33CC80",
-  blue: "#6199FF",
+  blue: "#5E9BFF",
+  violet: "#A78BFA",
+  sky: "#7FD1E8",
   amber: "#F2B840",
-  barOutput: "rgba(255,255,255,0.9)",
-  barInput: "rgba(255,255,255,0.5)",
-  barCached: "rgba(255,255,255,0.24)",
-  track: "rgba(255,255,255,0.1)",
+  track: "rgba(255,255,255,0.08)",
 }
 
-// Light variant, tuned for contrast on white cards.
+// Light variant, tuned for contrast and clarity on white cards.
 const light: Palette = {
-  bg: "#F2F2F4",
+  bg: "#FFFFFF",
   card: "#FFFFFF",
-  border: "#E3E3E6",
-  text: "#111111",
-  secondary: "#6E6E73",
-  tertiary: "#9C9CA1",
-  green: "#1FA866",
-  blue: "#3B72E8",
-  amber: "#D99A20",
-  barOutput: "rgba(17,17,17,0.85)",
-  barInput: "rgba(17,17,17,0.45)",
-  barCached: "rgba(17,17,17,0.18)",
-  track: "rgba(17,17,17,0.08)",
+  border: "rgba(15,23,42,0.06)",
+  text: "#0F172A",
+  secondary: "#64748B",
+  tertiary: "#94A3B8",
+  green: "#10B981",
+  blue: "#2563EB",
+  violet: "#7C3AED",
+  sky: "#0284C7",
+  amber: "#F59E0A",
+  track: "rgba(15,23,42,0.05)",
 }
 
 export const CHART_PALETTE: Color[] = [
@@ -62,8 +59,8 @@ export const CHART_PALETTE: Color[] = [
   "#EE4D99",
 ]
 const CHART_OTHER: Style = {
-  light: "rgba(17,17,17,0.3)",
-  dark: "rgba(255,255,255,0.32)",
+  light: "rgba(100,116,139,0.25)",
+  dark: "rgba(255,255,255,0.3)",
 }
 
 export interface Theme {
@@ -75,12 +72,11 @@ export interface Theme {
   tertiary: Style
   green: Style
   blue: Style
+  violet: Style
+  sky: Style
   amber: Style
-  accent: Style
-  barOutput: Style
-  barInput: Style
-  barCached: Style
   track: Style
+  forcedBg: Style | null
   isForcedDark: boolean
 }
 
@@ -91,7 +87,7 @@ export function rankColour(index: number, isOther: boolean): Style {
   return CHART_PALETTE[index % CHART_PALETTE.length]
 }
 
-export function makeTheme(mode: ThemeMode, accent: string | null): Theme {
+export function makeTheme(mode: ThemeMode): Theme {
   const pick = (key: keyof Palette): Style => {
     if (mode === "dark") return dark[key]
     if (mode === "light") return light[key]
@@ -106,23 +102,65 @@ export function makeTheme(mode: ThemeMode, accent: string | null): Theme {
     tertiary: pick("tertiary"),
     green: pick("green"),
     blue: pick("blue"),
+    violet: pick("violet"),
+    sky: pick("sky"),
     amber: pick("amber"),
-    // Validated by isHexColour() before it reaches here.
-    accent: (accent as Color | null) ?? pick("green"),
-    barOutput: pick("barOutput"),
-    barInput: pick("barInput"),
-    barCached: pick("barCached"),
     track: pick("track"),
+    forcedBg: mode === "system" ? null : pick("bg"),
     isForcedDark: mode === "dark",
   }
 }
 
-export const ACCENT_CHOICES: { name: string; value: string | null }[] = [
-  { name: "Default", value: null },
-  { name: "Green", value: "#33CC80" },
-  { name: "Blue", value: "#6199FF" },
-  { name: "Amber", value: "#F2B840" },
-  { name: "Violet", value: "#8C5CF5" },
-  { name: "Pink", value: "#EE4D99" },
-  { name: "Red", value: "#F04545" },
-]
+// Translucent variant of a hex colour, used to build chart gradients.
+export function faded(colour: Color, alpha: number): Color {
+  if (typeof colour === "string" && /^#[0-9a-fA-F]{6}$/.test(colour)) {
+    const r = parseInt(colour.slice(1, 3), 16)
+    const g = parseInt(colour.slice(3, 5), 16)
+    const b = parseInt(colour.slice(5, 7), 16)
+    return `rgba(${r},${g},${b},${alpha})`
+  }
+  return colour
+}
+
+// Translucent variant that stays appearance-aware.
+export function fadedStyle(style: Style, alpha: number): Style {
+  if (typeof style === "string") {
+    return faded(style, alpha)
+  }
+  return { light: faded(style.light, alpha), dark: faded(style.dark, alpha) }
+}
+
+// Vertical gradient following the appearance of the given style.
+export function verticalGradient(
+  style: Style,
+  topAlpha: number,
+  bottomAlpha: number,
+): ShapeStyle | DynamicShapeStyle {
+  const make = (colour: Color) => ({
+    colors: [faded(colour, topAlpha), faded(colour, bottomAlpha)],
+    startPoint: "top" as const,
+    endPoint: "bottom" as const,
+  })
+  if (typeof style === "string") {
+    return make(style)
+  }
+  return { light: make(style.light), dark: make(style.dark) }
+}
+
+// Soft radial halo, e.g. behind the end marker of the trend line.
+export function radialGlow(
+  style: Style,
+  alpha: number,
+  radius: number,
+): ShapeStyle | DynamicShapeStyle {
+  const make = (colour: Color) => ({
+    colors: [faded(colour, alpha), faded(colour, 0)],
+    center: "center" as const,
+    startRadius: 1,
+    endRadius: radius,
+  })
+  if (typeof style === "string") {
+    return make(style)
+  }
+  return { light: make(style.light), dark: make(style.dark) }
+}

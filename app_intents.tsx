@@ -27,7 +27,7 @@ async function refresh(daysParam?: number, includeMonthParam?: boolean) {
 export const RefreshUsageIntent = AppIntentManager.register({
   name: "RefreshUsageIntent",
   protocol: AppIntentProtocol.AppIntent,
-  perform: async (params: string | undefined) => {
+  perform: async (params: string) => {
     let days: number | undefined
     let includeMonth: boolean | undefined
     if (typeof params === "string" && params.length > 0) {

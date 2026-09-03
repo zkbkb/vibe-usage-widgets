@@ -18,13 +18,18 @@ export function mockPayload(days: number, now: Date = new Date()): UsagePayload 
   const buckets: UsageBucket[] = []
   const sessions: UsageSession[] = []
   const totalDays = Math.max(days, now.getDate())
-
   for (let d = 0; d < totalDays; d++) {
     const day = new Date(now.getFullYear(), now.getMonth(), now.getDate() - d)
     const intensity = 0.35 + rand() * 0.65
     const slots = 2 + Math.floor(rand() * 4)
     for (let s = 0; s < slots; s++) {
-      const start = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 9 + s * 2, rand() > 0.5 ? 30 : 0)
+      const start = new Date(
+        day.getFullYear(),
+        day.getMonth(),
+        day.getDate(),
+        9 + s * 2,
+        rand() > 0.5 ? 30 : 0,
+      )
       const source = SOURCES[Math.floor(rand() * SOURCES.length)]
       const model = MODELS[Math.floor(rand() * MODELS.length)]
       const project = PROJECTS[Math.floor(rand() * PROJECTS.length)]
